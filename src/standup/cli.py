@@ -42,10 +42,10 @@ def generate_standup() -> str:
     lines = ["Yesterday"]
 
     for task in completed:
-        lines.append(f"☑️ {task.content}")
+        lines.append(f"- ☑️ {task.content}")
 
     for task in overdue:
-        lines.append(f"❌ {task.content}")
+        lines.append(f"- ❌ {task.content}")
 
     if len(lines) == 1:
         lines.append("(no tasks)")
@@ -53,7 +53,7 @@ def generate_standup() -> str:
     lines.append("Today")
 
     for task in due_today:
-        lines.append(task.content)
+        lines.append(f"- {task.content}")
 
     if lines[-1] == "Today":
         lines.append("(no tasks)")

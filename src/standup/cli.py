@@ -50,7 +50,7 @@ def generate_standup() -> str:
     if len(lines) == 1:
         lines.append("(no tasks)")
 
-    lines.append("Today")
+    lines.extend(["", "Today"])
 
     for task in due_today:
         lines.append(f"- {task.content}")

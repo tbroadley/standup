@@ -39,34 +39,46 @@ def get_completed_tasks(
     if not token:
         return []
 
-    try:
-        response = httpx.get(
-            "https://api.todoist.com/sync/v9/completed/get_all",
-            headers={"Authorization": f"Bearer {token}"},
-            params={
-                "since": since.strftime("%Y-%m-%dT%H:%M"),
-                "until": until.strftime("%Y-%m-%dT%H:%M"),
-            },
-            timeout=15,
-        )
-        response.raise_for_status()
-        data = response.json()
-    except (httpx.TimeoutException, httpx.HTTPStatusError, httpx.RequestError, json.JSONDecodeError):
-        return []
-
     tasks = []
-    for item in data.get("items", []):
-        completed_at_str = item.get("completed_at", "")
-        if not completed_at_str:
-            continue
-        completed_at = datetime.fromisoformat(completed_at_str.replace("Z", "+00:00"))
-        tasks.append(
-            CompletedTask(
-                id=item.get("task_id", item.get("id", "")),
-                content=item.get("content", ""),
-                completed_at=completed_at,
+    offset = 0
+    limit = 200
+    headers = {"Authorization": f"Bearer {token}"}
+    base_params = {
+        "since": since.strftime("%Y-%m-%dT%H:%M"),
+        "until": until.strftime("%Y-%m-%dT%H:%M"),
+        "limit": limit,
+    }
+
+    try:
+        while True:
+            response = httpx.get(
+                "https://api.todoist.com/api/v1/tasks/completed",
+                headers=headers,
+                params={**base_params, "offset": offset},
+                timeout=15,
             )
-        )
+            response.raise_for_status()
+            data = response.json()
+
+            items = data.get("items", [])
+            for item in items:
+                completed_at_str = item.get("completed_at", "")
+                if not completed_at_str:
+                    continue
+                completed_at = datetime.fromisoformat(completed_at_str.replace("Z", "+00:00"))
+                tasks.append(
+                    CompletedTask(
+                        id=item.get("task_id", item.get("id", "")),
+                        content=item.get("content", ""),
+                        completed_at=completed_at,
+                    )
+                )
+
+            if len(items) < limit:
+                break
+            offset += limit
+    except (httpx.TimeoutException, httpx.HTTPStatusError, httpx.RequestError, json.JSONDecodeError):
+        pass
 
     tasks.sort(key=lambda t: t.completed_at)
     return tasks

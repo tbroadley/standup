@@ -30,7 +30,12 @@ def generate_standup() -> str:
     # Get completed tasks from yesterday (midnight to midnight in local time)
     yesterday_start = datetime.combine(yesterday, datetime.min.time())
     yesterday_end = datetime.combine(yesterday, datetime.max.time())
-    completed = todoist.get_completed_tasks(yesterday_start, yesterday_end)
+    completed_yesterday = todoist.get_completed_tasks(yesterday_start, yesterday_end)
+
+    # Get tasks completed today (midnight to midnight in local time)
+    today_start = datetime.combine(today, datetime.min.time())
+    today_end = datetime.combine(today, datetime.max.time())
+    completed_today = todoist.get_completed_tasks(today_start, today_end)
 
     # Get today's tasks (includes overdue)
     today_tasks = todoist.get_today_tasks()
@@ -41,7 +46,7 @@ def generate_standup() -> str:
 
     lines = ["#### Yesterday"]
 
-    for task in completed:
+    for task in completed_yesterday:
         lines.append(f"- ☑️ {task.content}")
 
     for task in overdue:
@@ -51,6 +56,9 @@ def generate_standup() -> str:
         lines.append("(no tasks)")
 
     lines.extend(["", "#### Today"])
+
+    for task in completed_today:
+        lines.append(f"- ☑️ {task.content}")
 
     for task in due_today:
         lines.append(f"- {task.content}")
